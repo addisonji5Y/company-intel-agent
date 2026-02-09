@@ -1,0 +1,509 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Company Intel Agent</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=DM+Sans:wght@400;500;600;700&display=swap');
+
+        :root {
+            --bg: #0a0a0f;
+            --surface: #12121a;
+            --surface-2: #1a1a26;
+            --border: #2a2a3a;
+            --text: #e4e4ef;
+            --text-dim: #7a7a8f;
+            --accent: #6c63ff;
+            --accent-glow: rgba(108, 99, 255, 0.15);
+            --green: #4ade80;
+            --yellow: #fbbf24;
+            --blue: #60a5fa;
+            --red: #f87171;
+            --orange: #fb923c;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'DM Sans', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+        }
+
+        /* ===== HEADER ===== */
+        .header {
+            padding: 24px 40px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .header h1 {
+            font-size: 20px;
+            font-weight: 600;
+            letter-spacing: -0.02em;
+        }
+        .header .badge {
+            font-size: 11px;
+            font-family: 'JetBrains Mono', monospace;
+            background: var(--accent-glow);
+            color: var(--accent);
+            padding: 3px 10px;
+            border-radius: 20px;
+            border: 1px solid rgba(108, 99, 255, 0.25);
+        }
+
+        /* ===== MAIN LAYOUT ===== */
+        .main {
+            display: grid;
+            grid-template-columns: 380px 1fr;
+            height: calc(100vh - 73px);
+        }
+
+        /* ===== LEFT PANEL - INPUT ===== */
+        .input-panel {
+            padding: 28px;
+            border-right: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            overflow-y: auto;
+        }
+
+        .section-label {
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: var(--text-dim);
+            margin-bottom: 4px;
+        }
+
+        .input-group {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .input-group label {
+            font-size: 13px;
+            font-weight: 500;
+            color: var(--text-dim);
+        }
+
+        .input-group input,
+        .input-group textarea {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 10px 14px;
+            color: var(--text);
+            font-family: 'DM Sans', sans-serif;
+            font-size: 14px;
+            transition: border-color 0.2s;
+        }
+        .input-group input:focus,
+        .input-group textarea:focus {
+            outline: none;
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px var(--accent-glow);
+        }
+        .input-group textarea {
+            resize: vertical;
+            min-height: 80px;
+        }
+
+        .btn-primary {
+            background: var(--accent);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            padding: 12px 20px;
+            font-size: 14px;
+            font-weight: 600;
+            font-family: 'DM Sans', sans-serif;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+        .btn-primary:hover { background: #5b52e8; }
+        .btn-primary:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        /* Quick action buttons */
+        .quick-actions {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        .btn-quick {
+            background: var(--surface);
+            color: var(--text-dim);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 10px 14px;
+            font-size: 13px;
+            font-family: 'DM Sans', sans-serif;
+            cursor: pointer;
+            text-align: left;
+            transition: all 0.2s;
+        }
+        .btn-quick:hover {
+            border-color: var(--accent);
+            color: var(--text);
+            background: var(--accent-glow);
+        }
+
+        /* ===== RIGHT PANEL - AGENT LOG + RESULT ===== */
+        .output-panel {
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+            overflow: hidden;
+        }
+
+        /* Agent Log - terminal style */
+        .log-header {
+            padding: 16px 28px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .log-header .dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--text-dim);
+        }
+        .log-header .dot.active { background: var(--green); }
+        .log-header span {
+            font-size: 12px;
+            font-family: 'JetBrains Mono', monospace;
+            color: var(--text-dim);
+        }
+
+        .log-container {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px 28px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 13px;
+            line-height: 1.7;
+        }
+
+        .log-entry {
+            margin-bottom: 4px;
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(4px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .log-agent {
+            font-weight: 600;
+            margin-right: 6px;
+        }
+        .log-agent.router { color: var(--accent); }
+        .log-agent.competitor { color: var(--orange); }
+        .log-agent.founder { color: var(--blue); }
+        .log-agent.business { color: var(--green); }
+        .log-agent.tavily { color: #00d4aa; }
+        .log-agent.system { color: var(--text-dim); }
+
+        .log-event-thinking { color: var(--yellow); }
+        .log-event-decision { color: var(--green); }
+        .log-event-tool_call { color: var(--blue); }
+        .log-event-tool_result { color: var(--text-dim); }
+        .log-event-error { color: var(--red); }
+
+        /* Final answer section */
+        .result-section {
+            border-top: 1px solid var(--border);
+            padding: 24px 28px;
+            max-height: 45%;
+            overflow-y: auto;
+        }
+        .result-section.hidden { display: none; }
+
+        .result-header {
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: var(--accent);
+            margin-bottom: 12px;
+        }
+        .result-content {
+            font-size: 14px;
+            line-height: 1.8;
+            white-space: pre-wrap;
+        }
+
+        /* ===== EMPTY STATE ===== */
+        .empty-state {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            color: var(--text-dim);
+            gap: 12px;
+        }
+        .empty-state .icon { font-size: 40px; opacity: 0.4; }
+        .empty-state p { font-size: 14px; }
+
+        /* ===== SCROLLBAR ===== */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb {
+            background: var(--border);
+            border-radius: 3px;
+        }
+
+        /* ===== LOADING SPINNER ===== */
+        .spinner {
+            display: inline-block;
+            width: 14px;
+            height: 14px;
+            border: 2px solid rgba(255,255,255,0.3);
+            border-top-color: white;
+            border-radius: 50%;
+            animation: spin 0.6s linear infinite;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🔍 Company Intel Agent</h1>
+        <span class="badge">Claude + Tavily</span>
+    </div>
+
+    <div class="main">
+        <!-- LEFT: Input Panel -->
+        <div class="input-panel">
+            <div class="section-label">Company Information</div>
+
+            <div class="input-group">
+                <label>Company Name</label>
+                <input type="text" id="companyName" placeholder="e.g. Stripe" />
+            </div>
+
+            <div class="input-group">
+                <label>Website (optional)</label>
+                <input type="text" id="website" placeholder="e.g. stripe.com" />
+            </div>
+
+            <div class="input-group">
+                <label>Your Question</label>
+                <textarea id="query" placeholder="e.g. Who are their main competitors?"></textarea>
+            </div>
+
+            <button class="btn-primary" id="analyzeBtn" onclick="analyze()">
+                🚀 Analyze
+            </button>
+
+            <div class="section-label" style="margin-top: 12px;">Quick Actions</div>
+            <div class="quick-actions">
+                <button class="btn-quick" onclick="quickAction('Who are the main competitors?')">
+                    🏢 Find Competitors
+                </button>
+                <button class="btn-quick" onclick="quickAction('Who founded this company and who is the current CEO?')">
+                    👤 Find Founders
+                </button>
+                <button class="btn-quick" onclick="quickAction('What does this company do? Describe their business model and main products.')">
+                    📊 Business Overview
+                </button>
+            </div>
+
+            <!-- 
+                🎯 VIBE CODING CHALLENGE: 
+                Add more quick action buttons here!
+                For example: "Find funding history", "Find recent news"
+                
+                Hint: just copy a btn-quick button and change the text.
+                For a REAL challenge: add a new agent in backend/agents/ 
+                to handle the new intent type!
+            -->
+        </div>
+
+        <!-- RIGHT: Agent Output -->
+        <div class="output-panel">
+            <div class="log-header">
+                <div class="dot" id="statusDot"></div>
+                <span id="statusText">Waiting for input...</span>
+            </div>
+
+            <div class="log-container" id="logContainer">
+                <div class="empty-state" id="emptyState">
+                    <div class="icon">🤖</div>
+                    <p>Enter a company name and question to see agents in action</p>
+                </div>
+            </div>
+
+            <div class="result-section hidden" id="resultSection">
+                <div class="result-header">📋 Final Answer</div>
+                <div class="result-content" id="resultContent"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ===== State =====
+        let isRunning = false;
+
+        // ===== Quick Actions =====
+        function quickAction(queryText) {
+            document.getElementById('query').value = queryText;
+        }
+
+        // ===== Main Analysis Function =====
+        async function analyze() {
+            if (isRunning) return;
+
+            const companyName = document.getElementById('companyName').value.trim();
+            const website = document.getElementById('website').value.trim();
+            const query = document.getElementById('query').value.trim();
+
+            if (!companyName || !query) {
+                alert('Please enter a company name and your question.');
+                return;
+            }
+
+            // Reset UI
+            isRunning = true;
+            const btn = document.getElementById('analyzeBtn');
+            btn.disabled = true;
+            btn.innerHTML = '<span class="spinner"></span> Analyzing...';
+
+            const emptyState = document.getElementById('emptyState');
+            if (emptyState) emptyState.style.display = 'none';
+            document.getElementById('logContainer').innerHTML = '';
+            document.getElementById('resultSection').classList.add('hidden');
+            document.getElementById('resultContent').textContent = '';
+            setStatus(true, 'Agents working...');
+
+            try {
+                const response = await fetch('/analyze', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        company_name: companyName,
+                        website: website || null,
+                        query: query,
+                    }),
+                });
+
+                if (!response.ok) {
+                    throw new Error(`Server error: ${response.status}`);
+                }
+
+                const reader = response.body.getReader();
+                const decoder = new TextDecoder();
+                let buffer = '';
+
+                while (true) {
+                    const { done, value } = await reader.read();
+                    if (done) break;
+
+                    const chunk = decoder.decode(value, { stream: true });
+                    buffer += chunk;
+
+                    // Process all complete SSE events in buffer
+                    // SSE events end with double newline (handle \r\n and \n)
+                    let eventEnd;
+                    while ((eventEnd = buffer.search(/\n\n|\r\n\r\n/)) !== -1) {
+                        const eventBlock = buffer.slice(0, eventEnd);
+                        buffer = buffer.slice(eventEnd + (buffer.slice(eventEnd, eventEnd + 4).includes('\r') ? 4 : 2));
+
+                        // Extract data line from SSE event block
+                        const lines = eventBlock.split(/\r?\n/);
+                        const dataLine = lines.find(line => line.startsWith('data:'));
+                        if (dataLine) {
+                            const dataStr = dataLine.slice(5).trim();
+                            try {
+                                const data = JSON.parse(dataStr);
+                                handleEvent(data);
+                            } catch (e) {
+                                // Skip malformed JSON
+                            }
+                        }
+                    }
+                }
+            } catch (error) {
+                addLog('System', 'error', `❌ Connection error: ${error.message}`);
+            }
+
+            // Done
+            isRunning = false;
+            btn.disabled = false;
+            btn.innerHTML = '🚀 Analyze';
+            setStatus(false, 'Done');
+        }
+
+        // ===== Handle SSE Events =====
+        function handleEvent(data) {
+            const { agent, event, content } = data;
+
+            if (event === 'final_answer') {
+                // Show in the result section
+                document.getElementById('resultSection').classList.remove('hidden');
+                document.getElementById('resultContent').textContent = content;
+                addLog(agent, 'decision', '✅ Analysis complete - see results below');
+            } else {
+                addLog(agent, event, content);
+            }
+        }
+
+        // ===== Add Log Entry =====
+        function addLog(agent, event, content) {
+            const container = document.getElementById('logContainer');
+            const entry = document.createElement('div');
+            entry.className = 'log-entry';
+
+            const agentClass = agent.toLowerCase().includes('router') ? 'router'
+                : agent.toLowerCase().includes('competitor') ? 'competitor'
+                : agent.toLowerCase().includes('founder') ? 'founder'
+                : agent.toLowerCase().includes('business') ? 'business'
+                : agent.toLowerCase().includes('tavily') ? 'tavily'
+                : 'system';
+
+            entry.innerHTML = `<span class="log-agent ${agentClass}">[${agent}]</span><span class="log-event-${event}">${escapeHtml(content)}</span>`;
+            container.appendChild(entry);
+
+            // Auto-scroll to bottom
+            container.scrollTop = container.scrollHeight;
+        }
+
+        // ===== Helpers =====
+        function setStatus(active, text) {
+            document.getElementById('statusDot').className = active ? 'dot active' : 'dot';
+            document.getElementById('statusText').textContent = text;
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // Allow Enter key in query field
+        document.getElementById('query').addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                analyze();
+            }
+        });
+    </script>
+</body>
+</html>
