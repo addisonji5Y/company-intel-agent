@@ -1,14 +1,4 @@
----
-title: Company Intel Agent
-emoji: 🔍
-colorFrom: purple
-colorTo: blue
-sdk: docker
-pinned: false
-license: mit
----
-
-# 🔍 Company Intel Agent
+# Company Intel Agent
 
 > A lightweight multi-agent system for company intelligence — built for **Vibe Coding Training**.
 
@@ -49,7 +39,7 @@ User Input (company + question)
 ### 1. Clone & Install
 
 ```bash
-git clone <your-repo-url>
+git clone https://github.com/addisonji5Y/company-intel-agent.git
 cd company-intel-agent
 pip install -r requirements.txt
 ```
